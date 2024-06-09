@@ -67,23 +67,34 @@ const createStoreImpl: CreateStoreImpl = (createState) => {
   console.log('listeners>>', listeners);
 
   const setState: StoreApi<TState>['setState'] = (partial, replace) => {
-    console.log('partial, replace>>', partial, '++', replace);
+    console.log('partial>>', partial);
+    console.log('state>>', state);
 
+    // 상태 변경 감지: setState가 호출되면, partial 또는 함수로 전달된 새로운 상태를 계산
     const nextState =
       typeof partial === 'function'
         ? (partial as (state: TState) => TState)(state)
         : partial;
 
+    // 이전 상태와 비교: 새로운 상태와 이전 상태를 비교하여 변경이 있는지 확인
     if (!Object.is(nextState, state)) {
       console.log('state>>', state);
 
       const previousState = state;
       console.log('previousState>>', previousState);
+      console.log('nextState>>', nextState);
 
+      // 상태 업데이트: 변경이 있다면, 상태를 업데이트하고 이전 상태와 새로운 상태를 리스너들에게 전달
+      // partial(state)는 { count: state.count + 1 }를 반환
+      // 현재 상태인 state는 { count: 0, increment: ƒ, decrement: ƒ, subscribeToCountChanges: ƒ }
+      // partial(state)는 { count: 0 + 1 }를 반환하여 { count: 1 }가 된다.
       state =
         replace ?? (typeof nextState !== 'object' || nextState === null)
           ? (nextState as TState)
           : Object.assign({}, state, nextState);
+      console.log('changed state>>', state);
+
+      // 리스너 호출: 모든 구독된 리스너들을 호출하여 상태 변경을 알림
       listeners.forEach((listener) => {
         console.log('listener>>', listener);
 
@@ -98,16 +109,22 @@ const createStoreImpl: CreateStoreImpl = (createState) => {
     initialState;
 
   const subscribe: StoreApi<TState>['subscribe'] = (listener) => {
+    console.log('subscribe??');
+
     console.log('subscribe listener>>', listener);
+    const a = listeners.add(listener);
+    console.log('a>>', a);
 
     listeners.add(listener);
-    console.log('store listeners>>', listeners);
+    // console.log('store listeners>>', listeners);
 
     // Unsubscribe
     return () => listeners.delete(listener);
   };
 
   const destroy: StoreApi<TState>['destroy'] = () => {
+    console.log('destroy??');
+
     if (import.meta.env?.MODE !== 'production') {
       console.warn(
         '[DEPRECATED] The `destroy` method will be unsupported in a future version. Instead use unsubscribe function returned by subscribe. Everything will be garbage-collected if store is garbage-collected.'
@@ -118,6 +135,8 @@ const createStoreImpl: CreateStoreImpl = (createState) => {
 
   const api = { setState, getState, getInitialState, subscribe, destroy };
   const initialState = (state = createState(setState, getState, api));
+  console.log('initialState>>', initialState);
+
   return api as any;
 };
 

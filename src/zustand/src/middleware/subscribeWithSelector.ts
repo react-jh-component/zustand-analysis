@@ -54,6 +54,7 @@ const subscribeWithSelectorImpl: SubscribeWithSelectorImpl =
       console.log('selector>>', selector);
 
       let listener: Listener = selector; // if no selector
+
       if (optListener) {
         const equalityFn = options?.equalityFn || Object.is;
         let currentSlice = selector(api.getState());
